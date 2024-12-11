@@ -28,6 +28,12 @@ type InputEvent struct {
 var	getUserAPI = "https://fastfood/v1/customer/cpf?cpf="
 var	postUserAPI = "https://fastfood/v1/customer"
 
+type InoutEvent struct {
+	CPF string `json:"CPF"`
+	Name string `json:"Name"`
+	Email string `json:"Email"`
+}
+
 func main() {
 	lambda.Start(handler)
 }
@@ -39,6 +45,8 @@ func handler(event InputEvent) (string, error) {
 	cpf := event.CPF
 	name := event.Name
 	email := event.Email
+
+	log.Printf("Dados recebidos: CPF:%s, Name:%s, Email:%s", cpf, name, email)
 
 	// Verificar se o usuário já existe (GET)
 	shouldReturn, returnValue, returnValue1 := buscarCliente(cpf)
