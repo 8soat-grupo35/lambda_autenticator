@@ -1,13 +1,10 @@
 package main
 
 import (
-	"log"
-	"bytes"
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
+	"log"
 
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 )
 
@@ -24,80 +21,48 @@ type InputEvent struct {
 	Email string `json:"email"`
 }
 
-	// URL das APIs
-var	getUserAPI = "https://fastfood/v1/customer/cpf?cpf="
-var	postUserAPI = "https://fastfood/v1/customer"
-
-type InoutEvent struct {
-	CPF string `json:"CPF"`
-	Name string `json:"Name"`
-	Email string `json:"Email"`
-}
+// URL das APIs
+var getUserAPI = "https://fastfood/v1/customer/cpf?cpf="
+var postUserAPI = "https://fastfood/v1/customer"
 
 func main() {
 	lambda.Start(handler)
 }
 
-func handler(event InputEvent) (string, error) {
+func handler(event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	log.Println("Iniciando lambda-authenticator")
 
-	log.Println("Iniciando lambda-autenticator")
-
-	cpf := event.CPF
-	name := event.Name
-	email := event.Email
-
-	log.Printf("Dados recebidos: CPF:%s, Name:%s, Email:%s", cpf, name, email)
-
-	// Verificar se o usuário já existe (GET)
-	shouldReturn, returnValue, returnValue1 := buscarCliente(cpf)
-	if shouldReturn {
-		return returnValue, returnValue1
+	// Verificar se o body está vazio
+	log.Println("VALOR BODY"+event.Body)
+	if event.Body == "" {
+		log.Println("Erro: Body vazio na requisição")
+		return events.APIGatewayProxyResponse{
+			StatusCode: 400,
+			Body:       "Body vazio na requisição",
+		}, nil
 	}
 
-	// Usuário não encontrado, cadastrar (POST)
-	return cadastrarCliente(name, email, cpf)
-}
+	log.Printf("Body recebido: %s", event.Body)
 
-func cadastrarCliente(name string, email string, cpf string) (string, error) {
-	newUser := CustomerDto{
-		Name:  name,
-		Email: email,
-		CPF:   cpf,
-	}
-
-	jsonData, err := json.Marshal(newUser)
+	// Decodificar o JSON recebido
+	var input InputEvent
+	err := json.Unmarshal([]byte(event.Body), &input)
 	if err != nil {
-		return "", fmt.Errorf("erro ao criar payload de cadastro: %v", err)
+		log.Printf("Erro ao decodificar o body: %v", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: 400,
+			Body:       "Formato inválido no body",
+		}, err
 	}
 
-	postResp, err := http.Post(postUserAPI, "application/json", bytes.NewBuffer(jsonData))
-	if err != nil {
-		return "", fmt.Errorf("erro ao cadastrar usuário: %v", err)
-	}
-	defer postResp.Body.Close()
+	// Acessar os valores decodificados
+	log.Printf("Dados recebidos: CPF=%s, Name=%s, Email=%s", input.CPF, input.Name, input.Email)
 
-	if postResp.StatusCode != http.StatusCreated {
-		body, _ := ioutil.ReadAll(postResp.Body)
-		return "", fmt.Errorf("erro ao cadastrar usuário: %s", string(body))
+	// Criar resposta com status 200
+	response := events.APIGatewayProxyResponse{
+		StatusCode: 200,
+		Body:       input.CPF,
 	}
 
-	return "Usuário cadastrado com sucesso!", nil
-}
-
-func buscarCliente(cpf string) (bool, string, error) {
-	resp, err := http.Get(getUserAPI+""+cpf)
-	if err != nil {
-		return true, "", fmt.Errorf("erro ao verificar usuário: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusOK {
-		return true, "Usuário já cadastrado!", nil
-	}
-
-	if resp.StatusCode != http.StatusNotFound {
-		body, _ := ioutil.ReadAll(resp.Body)
-		return true, "", fmt.Errorf("erro inesperado ao verificar usuário: %s", string(body))
-	}
-	return false, "", nil
+	return response, nil
 }

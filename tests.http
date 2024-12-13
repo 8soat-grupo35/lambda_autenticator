@@ -1,6 +1,5 @@
-post https://d8r9xr7uke.execute-api.us-east-1.amazonaws.com/Lambda-Autenticator
+post https://uqa58f3tza.execute-api.us-east-1.amazonaws.com/Lambda-Autenticator
 Content-type: application/json
-
 {
-    "CPF": "111.111.111-11"
+  "body": "{\"CPF\":\"value1\",\"Name\":\"value2\",\"Email\":\"value3\"}"
 }
