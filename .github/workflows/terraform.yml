@@ -52,10 +52,10 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION_DEFAULT }}
       
       - name: Terraform Init
-        run: terraform init
+        run: cd infra && terraform init
 
       - name: Terraform Plan
-        run: terraform plan -var "accountIdVoclabs=${{ secrets.AWS_ACCOUNT_ID }}"
+        run: cd infra && terraform plan -var "accountIdVoclabs=${{ secrets.AWS_ACCOUNT_ID }}"
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve -var "accountIdVoclabs=${{ secrets.AWS_ACCOUNT_ID }}"
+        run: cd infra && terraform apply -auto-approve -var "accountIdVoclabs=${{ secrets.AWS_ACCOUNT_ID }}"
