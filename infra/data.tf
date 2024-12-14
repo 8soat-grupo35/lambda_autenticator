@@ -26,6 +26,6 @@ data "archive_file" "function_archive" {
   depends_on = [null_resource.function_binary]
 
   type        = "zip"
-  source_file = "../bootstrap"
-  output_path = "lambda"
+  source_file = "bootstrap"
+  output_path = "bootstrap.zip"
 }
