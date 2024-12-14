@@ -1,12 +1,18 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"log"
+	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 )
+
+// URL das APIs
+var getUserAPI = "https://fastfood/v1/customer/cpf?cpf="
+var postUserAPI = "https://fastfood/v1/customer"
 
 type CustomerDto struct {
 	Id    uint32 `json:"id"`
@@ -21,48 +27,108 @@ type InputEvent struct {
 	Email string `json:"email"`
 }
 
-// URL das APIs
-var getUserAPI = "https://fastfood/v1/customer/cpf?cpf="
-var postUserAPI = "https://fastfood/v1/customer"
-
 func main() {
 	lambda.Start(handler)
 }
 
-func handler(event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func handler(request events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
 	log.Println("Iniciando lambda-authenticator")
 
 	// Verificar se o body está vazio
-	log.Println("VALOR BODY"+event.Body)
-	if event.Body == "" {
+	if request.Body == "" {
 		log.Println("Erro: Body vazio na requisição")
-		return events.APIGatewayProxyResponse{
+		return events.APIGatewayV2HTTPResponse{
 			StatusCode: 400,
 			Body:       "Body vazio na requisição",
 		}, nil
 	}
 
-	log.Printf("Body recebido: %s", event.Body)
+	log.Printf("Body recebido: %s", request.Body)
 
 	// Decodificar o JSON recebido
 	var input InputEvent
-	err := json.Unmarshal([]byte(event.Body), &input)
+	err := json.Unmarshal([]byte(request.Body), &input)
 	if err != nil {
 		log.Printf("Erro ao decodificar o body: %v", err)
-		return events.APIGatewayProxyResponse{
+		return events.APIGatewayV2HTTPResponse{
 			StatusCode: 400,
 			Body:       "Formato inválido no body",
-		}, err
+		}, nil
 	}
 
 	// Acessar os valores decodificados
 	log.Printf("Dados recebidos: CPF=%s, Name=%s, Email=%s", input.CPF, input.Name, input.Email)
 
-	// Criar resposta com status 200
-	response := events.APIGatewayProxyResponse{
-		StatusCode: 200,
-		Body:       input.CPF,
+	existeCliente, response, err := buscarCliente(input.CPF)
+	if(existeCliente) {
+		return response, err
 	}
 
-	return response, nil
+	return cadastrarCliente(input.CPF, input.Name, input.Email)
+}
+
+func cadastrarCliente(name string, email string, cpf string) (events.APIGatewayV2HTTPResponse, error) {
+    newUser := CustomerDto{
+        Name:  name,
+        Email: email,
+        CPF:   cpf,
+    }
+
+    jsonData, err := json.Marshal(newUser)
+    if err != nil {
+		return events.APIGatewayV2HTTPResponse{
+			StatusCode: 400,
+			Body:       "Erro ao criar payload de cadastro",
+		}, err
+    }
+
+    postResp, err := http.Post(postUserAPI, "application/json", bytes.NewBuffer(jsonData))
+    if err != nil {
+		return events.APIGatewayV2HTTPResponse{
+			StatusCode: 400,
+			Body:       "Erro ao cadastrar usuário",
+		}, err
+    }
+    defer postResp.Body.Close()
+
+    if postResp.StatusCode != http.StatusCreated {
+		return events.APIGatewayV2HTTPResponse{
+			StatusCode: 400,
+			Body:       "Erro ao cadastrar usuário:",
+		}, err
+    }
+
+	return events.APIGatewayV2HTTPResponse{
+		StatusCode: 200,
+		Body:       "Usuário cadastrado com sucesso!",
+	}, nil
+}
+
+func buscarCliente(cpf string) (bool, events.APIGatewayV2HTTPResponse, error) {
+    resp, err := http.Get(getUserAPI+""+cpf)
+    if err != nil {
+		return true, events.APIGatewayV2HTTPResponse{
+			StatusCode: 500,
+			Body:       "Erro ao verificar usuário.",
+		}, err
+
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode == http.StatusOK {
+        //return true, "Usuário já cadastrado!", nil
+
+		return true, events.APIGatewayV2HTTPResponse{
+			StatusCode: 422,
+			Body:       "Usuário já cadastrado!",
+		}, err
+    }
+
+    if resp.StatusCode != http.StatusNotFound {
+		return true, events.APIGatewayV2HTTPResponse{
+			StatusCode: 422,
+			Body:       "Erro inesperado ao verificar usuário.",
+		}, err
+    }
+    return false, events.APIGatewayV2HTTPResponse{}, nil
 }
