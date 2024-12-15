@@ -14,7 +14,7 @@ import (
 var fastfoodAPI = os.Getenv("FASTFOOD_APP_URL")
 
 // URL das APIs
-var getUserAPI = fastfoodAPI + "/v1/customer/cpf?cpf="
+var getUserAPI = fastfoodAPI + "/v1/customer/cpf/"
 var postUserAPI = fastfoodAPI + "/v1/customer"
 
 type CustomerDto struct {
@@ -87,6 +87,9 @@ func cadastrarCliente(name string, email string, cpf string) (events.APIGatewayV
 	}
 
 	postResp, err := http.Post(postUserAPI, "application/json", bytes.NewBuffer(jsonData))
+	log.Println("Retorno API Cadastrar Cliente")
+	log.Println("Cadastrar Cliente Resp",postResp)
+	
 	if err != nil {
 		return events.APIGatewayV2HTTPResponse{
 			StatusCode: 400,
@@ -110,6 +113,8 @@ func cadastrarCliente(name string, email string, cpf string) (events.APIGatewayV
 
 func buscarCliente(cpf string) (bool, events.APIGatewayV2HTTPResponse, error) {
 	resp, err := http.Get(getUserAPI + "" + cpf)
+	log.Println("Retorno API Buscar Cliente")
+	log.Println("Buscar Cliente", resp)
 	if err != nil {
 		return true, events.APIGatewayV2HTTPResponse{
 			StatusCode: 500,
