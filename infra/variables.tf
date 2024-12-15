@@ -25,3 +25,6 @@ variable "policyArn" {
 variable "accessConfig" {
   default = "API_AND_CONFIG_MAP"
 }
+
+variable "fastfoodAppUrl" {
+}

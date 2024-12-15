@@ -22,8 +22,6 @@ on:
         required: true
 jobs:
   terraform:
-    env:
-      FASTFOOD_APP_URL: ${{ secrets.AWS_REGION_DEFAULT }}
     runs-on: ubuntu-latest
 
     defaults:
@@ -59,7 +57,7 @@ jobs:
         run: cd infra && terraform init
 
       - name: Terraform Plan
-        run: cd infra && terraform plan -var "accountIdVoclabs=${{ secrets.AWS_ACCOUNT_ID }}"
+        run: cd infra && terraform plan -var "accountIdVoclabs=${{ secrets.AWS_ACCOUNT_ID }}" -var "fastfoodAppUrl=${{ secrets.FASTFOOD_APP_URL}}"
 
       - name: Terraform Apply
-        run: cd infra && terraform apply -auto-approve -var "accountIdVoclabs=${{ secrets.AWS_ACCOUNT_ID }}"
+        run: cd infra && terraform apply -auto-approve -var "accountIdVoclabs=${{ secrets.AWS_ACCOUNT_ID }}" -var "fastfoodAppUrl=${{ secrets.FASTFOOD_APP_URL}}"

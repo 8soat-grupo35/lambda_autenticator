@@ -6,4 +6,9 @@ resource "aws_lambda_function" "auth_lambda" {
   handler          = "main"
   runtime          = "provided.al2023"
   source_code_hash = data.archive_file.function_archive.output_base64sha256
+  environment {
+    variables = {
+      FASTFOOD_APP_URL = "${var.fastfoodAppUrl}"
+    }
+  }
 }
