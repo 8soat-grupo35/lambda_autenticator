@@ -14,8 +14,8 @@ import (
 var fastfoodAPI = os.Getenv("FASTFOOD_APP_URL")
 
 // URL das APIs
-var getUserAPI = fastfoodAPI + "/customer/cpf?cpf="
-var postUserAPI = fastfoodAPI + "/customer"
+var getUserAPI = fastfoodAPI + "/v1/customer/cpf?cpf="
+var postUserAPI = fastfoodAPI + "/v1/customer"
 
 type CustomerDto struct {
 	Id    uint32 `json:"id"`
