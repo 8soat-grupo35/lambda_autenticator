@@ -18,8 +18,12 @@ on:
         required: true
       CLUSTER_NAME:
         required: true
+      FASTFOOD_APP_URL:
+        required: true
 jobs:
   terraform:
+    env:
+      FASTFOOD_APP_URL: ${{ secrets.AWS_REGION_DEFAULT }}
     runs-on: ubuntu-latest
 
     defaults:

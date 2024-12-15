@@ -5,14 +5,17 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 )
 
+var fastfoodAPI = os.Getenv("FASTFOOD_APP_URL")
+
 // URL das APIs
-var getUserAPI = "https://fastfood/v1/customer/cpf?cpf="
-var postUserAPI = "https://fastfood/v1/customer"
+var getUserAPI = fastfoodAPI + "/customer/cpf?cpf="
+var postUserAPI = fastfoodAPI + "/customer"
 
 type CustomerDto struct {
 	Id    uint32 `json:"id"`
@@ -33,6 +36,7 @@ func main() {
 
 func handler(request events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
 	log.Println("Iniciando lambda-authenticator")
+	log.Println("FASTFOOD_API_URL", fastfoodAPI)
 
 	// Verificar se o body está vazio
 	if request.Body == "" {
@@ -60,7 +64,7 @@ func handler(request events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPRes
 	log.Printf("Dados recebidos: CPF=%s, Name=%s, Email=%s", input.CPF, input.Name, input.Email)
 
 	existeCliente, response, err := buscarCliente(input.CPF)
-	if(existeCliente) {
+	if existeCliente {
 		return response, err
 	}
 
@@ -68,35 +72,35 @@ func handler(request events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPRes
 }
 
 func cadastrarCliente(name string, email string, cpf string) (events.APIGatewayV2HTTPResponse, error) {
-    newUser := CustomerDto{
-        Name:  name,
-        Email: email,
-        CPF:   cpf,
-    }
+	newUser := CustomerDto{
+		Name:  name,
+		Email: email,
+		CPF:   cpf,
+	}
 
-    jsonData, err := json.Marshal(newUser)
-    if err != nil {
+	jsonData, err := json.Marshal(newUser)
+	if err != nil {
 		return events.APIGatewayV2HTTPResponse{
 			StatusCode: 400,
 			Body:       "Erro ao criar payload de cadastro",
 		}, err
-    }
+	}
 
-    postResp, err := http.Post(postUserAPI, "application/json", bytes.NewBuffer(jsonData))
-    if err != nil {
+	postResp, err := http.Post(postUserAPI, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
 		return events.APIGatewayV2HTTPResponse{
 			StatusCode: 400,
 			Body:       "Erro ao cadastrar usuário",
 		}, err
-    }
-    defer postResp.Body.Close()
+	}
+	defer postResp.Body.Close()
 
-    if postResp.StatusCode != http.StatusCreated {
+	if postResp.StatusCode != http.StatusCreated {
 		return events.APIGatewayV2HTTPResponse{
 			StatusCode: 400,
 			Body:       "Erro ao cadastrar usuário:",
 		}, err
-    }
+	}
 
 	return events.APIGatewayV2HTTPResponse{
 		StatusCode: 200,
@@ -105,30 +109,30 @@ func cadastrarCliente(name string, email string, cpf string) (events.APIGatewayV
 }
 
 func buscarCliente(cpf string) (bool, events.APIGatewayV2HTTPResponse, error) {
-    resp, err := http.Get(getUserAPI+""+cpf)
-    if err != nil {
+	resp, err := http.Get(getUserAPI + "" + cpf)
+	if err != nil {
 		return true, events.APIGatewayV2HTTPResponse{
 			StatusCode: 500,
 			Body:       "Erro ao verificar usuário.",
 		}, err
 
-    }
-    defer resp.Body.Close()
+	}
+	defer resp.Body.Close()
 
-    if resp.StatusCode == http.StatusOK {
-        //return true, "Usuário já cadastrado!", nil
+	if resp.StatusCode == http.StatusOK {
+		//return true, "Usuário já cadastrado!", nil
 
 		return true, events.APIGatewayV2HTTPResponse{
 			StatusCode: 422,
 			Body:       "Usuário já cadastrado!",
 		}, err
-    }
+	}
 
-    if resp.StatusCode != http.StatusNotFound {
+	if resp.StatusCode != http.StatusNotFound {
 		return true, events.APIGatewayV2HTTPResponse{
 			StatusCode: 422,
 			Body:       "Erro inesperado ao verificar usuário.",
 		}, err
-    }
-    return false, events.APIGatewayV2HTTPResponse{}, nil
+	}
+	return false, events.APIGatewayV2HTTPResponse{}, nil
 }
