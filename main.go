@@ -129,11 +129,11 @@ func buscarCliente(cpf string) (bool, events.APIGatewayV2HTTPResponse, error) {
 
 		return true, events.APIGatewayV2HTTPResponse{
 			StatusCode: 422,
-			Body:       "Usuário já cadastrado!",
+			Body:       "Usuário Autenticado com sucesso!",
 		}, err
 	}
 
-	if resp.StatusCode != http.StatusNotFound {
+	if resp.StatusCode != http.StatusInternalServerError {
 		return true, events.APIGatewayV2HTTPResponse{
 			StatusCode: 422,
 			Body:       "Erro inesperado ao verificar usuário.",
