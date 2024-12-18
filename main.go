@@ -98,7 +98,7 @@ func cadastrarCliente(name string, email string, cpf string) (events.APIGatewayV
 	}
 	defer postResp.Body.Close()
 
-	if postResp.StatusCode != http.StatusCreated {
+	if postResp.StatusCode != http.StatusOK {
 		return events.APIGatewayV2HTTPResponse{
 			StatusCode: 400,
 			Body:       "Erro ao cadastrar usuário:",
@@ -128,7 +128,7 @@ func buscarCliente(cpf string) (bool, events.APIGatewayV2HTTPResponse, error) {
 		//return true, "Usuário já cadastrado!", nil
 
 		return true, events.APIGatewayV2HTTPResponse{
-			StatusCode: 422,
+			StatusCode: 200,
 			Body:       "Usuário Autenticado com sucesso!",
 		}, err
 	}
